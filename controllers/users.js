@@ -60,6 +60,7 @@ const updateAvatar = (req, res) => {
   const { avatar } = req.body;
 
   User.findByIdAndUpdate(req.user._id, { avatar }, { new: true, runValidators: true })
+    .orFail(new Error('Not Found'))
     .then((user) => res.status(200).send({ data: user }))
     .catch((err) => {
       if (err.message === 'Not found') {
@@ -91,7 +92,7 @@ const updateUser = (req, res) => {
     { name, about },
     { new: true, runValidators: true },
   )
-    .orFail()
+    .orFail(new Error('Not Found'))
     .then((user) => {
       res.status(200).send(user);
     })
