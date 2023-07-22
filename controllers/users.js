@@ -97,7 +97,7 @@ const updateUser = (req, res) => {
       res.status(200).send(user);
     })
     .catch((err) => {
-      if (err.name === 'Not found') {
+      if (err.message === 'Not found') {
         res.status(404).send({
           message: 'User not found',
         });
