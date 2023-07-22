@@ -20,7 +20,7 @@ const createCard = (req, res) => {
   Card.create({ name, link, owner })
     .then((card) => res.status(201).send(card))
     .catch((err) => {
-      if (err.message.includes('ValidationError')) {
+      if (err.name.includes('ValidationError')) {
         res.status(ERROR_CODE).send({ message: 'Запрашиваемые данные не найдены' });
       } else {
         res
