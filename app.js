@@ -1,23 +1,26 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const helmet = require('helmet');
+const { errors } = require('celebrate');
+const router = require('./routes');
+const internalServerError = require('./middlewares/internalServerError');
 const limiter = require('./middlewares/rateLimit');
 
-const router = require('./routes');
-
 const { PORT = 3000 } = process.env;
-
-const app = express();
-app.use(helmet());
-app.use(limiter);
 
 mongoose.connect('mongodb://127.0.0.1:27017/mestodb', {
   useNewUrlParser: true,
 });
 
-app.use(express.json());
+const app = express();
 
+app.use(helmet());
+app.use(limiter);
+
+app.use(express.json());
+app.use(errors());
 app.use(router);
+app.use(internalServerError);
 
 // middleware для обработки ошибок
 app.use((req, res, next) => {
