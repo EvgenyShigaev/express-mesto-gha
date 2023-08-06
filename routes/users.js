@@ -12,8 +12,6 @@ const {
 router.get('/me', currentUser);
 router.get('/', getUsers);
 
-
-
 router.get('/:userId', validationGetUsers, getUser);
 
 // router.post('/', createUser);
