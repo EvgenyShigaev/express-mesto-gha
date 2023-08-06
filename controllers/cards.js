@@ -9,7 +9,7 @@ const Forbidden = require('../errors/Forbidden');
 const getCards = (req, res, next) => {
   Card.find({})
     .populate('owner')
-    .then((cards) => res.status(200).send(cards))
+    .then((card) => res.status(200).send({ data: card }))
     .catch((err) => {
       next(err);
     });
@@ -20,7 +20,7 @@ const createCard = (req, res, next) => {
   const owner = req.user._id;
 
   Card.create({ name, link, owner })
-    .then((card) => res.status(201).send(card))
+    .then((card) => res.status(201).send({ data: card }))
     .catch((err) => {
       if (err instanceof mongoose.Error.ValidationError) {
         next(new BadRequest('Некорректный запрос'));
@@ -65,12 +65,12 @@ const likeCard = (req, res, next) => {
     { $addToSet: { likes: req.user._id } },
     { new: true },
   )
-    .populate('owner', 'likes')
+    .populate(['owner', 'likes'])
     .orFail(() => {
       throw new NotFoundError('Карточка не найдена');
     })
     .then((card) => {
-      res.status(200).send(card);
+      res.status(200).send({ data: card, message: 'Запрос выполнен' });
     })
     .catch((err) => {
       if (err.name === 'CastError') {
@@ -87,7 +87,7 @@ const dislikeCard = (req, res, next) => {
     { $pull: { likes: req.user._id } },
     { new: true },
   )
-    .populate('owner', 'likes')
+    .populate(['owner', 'likes'])
     .orFail(() => {
       throw new NotFoundError('Карточка не найдена');
     })
