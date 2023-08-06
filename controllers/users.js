@@ -17,25 +17,27 @@ const getUsers = (req, res, next) => {
     .orFail(() => {
       throw new NotFoundError('Пользователь не найден');
     })
-    .then((users) => res.status(200).send(users))
+    .then((users) => res.status(200).send({ data: users }))
     .catch((err) => {
       next(err);
     });
 };
 
+// findById
 const getUser = (req, res, next) => {
-  User.findById(req.params.userId)
+  User.findById(req.user_id)
     .orFail(() => {
       throw new NotFoundError('Пользователь не найден');
     })
     .then((user) => res
       .status(200)
-      .send({ user }))
+      .send(user))
     .catch((err) => {
-      if (err instanceof mongoose.Error.CastError) {
-        return next(new BadRequest('Некорректный запрос'));
+      if (err.name === 'CastError') {
+        next(new BadRequest('Некорректный запрос'));
+      } else {
+        next(err);
       }
-      return next(err);
     });
 };
 
@@ -102,7 +104,7 @@ const updateUser = (req, res, next) => {
     { name, about },
     { new: true, runValidators: true },
   )
-    .orFail(new Error('Not Found'))
+    .orFail(new NotFoundError('Not Found'))
     .then((user) => {
       res.status(200).send(user);
     }).catch((err) => {
