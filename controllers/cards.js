@@ -1,124 +1,104 @@
+const mongoose = require('mongoose');
+
 const Card = require('../models/card');
 
-const ERROR_CODE = 400;
-const NOT_FOUND = 404;
-const INTERNAL_SERVER_ERROR = 500;
+const BadRequest = require('../errors/BadRequest');
+const NotFoundError = require('../errors/NotFoundError');
+const Forbidden = require('../errors/Forbidden');
 
-const getCards = (req, res) => {
-  // eslint-disable-next-line no-console
-  console.log('req.user._id', req.user._id);
+const getCards = (req, res, next) => {
   Card.find({})
+    .populate('owner')
     .then((cards) => res.status(200).send(cards))
-    .catch(() => res.status(INTERNAL_SERVER_ERROR).send({
-      message: 'Server error',
-    }));
+    .catch((err) => {
+      next(err);
+    });
 };
 
-const createCard = (req, res) => {
+const createCard = (req, res, next) => {
   const { name, link } = req.body;
   const owner = req.user._id;
   Card.create({ name, link, owner })
     .then((card) => res.status(201).send(card))
     .catch((err) => {
-      if (err.name.includes('ValidationError')) {
-        res.status(ERROR_CODE).send({ message: 'Запрашиваемые данные не найдены' });
+      if (err instanceof mongoose.Error.ValidationError) {
+        next(new BadRequest('Некорректный запрос'));
       } else {
-        res
-          .status(INTERNAL_SERVER_ERROR)
-          .send({
-            message: 'Server error',
-          });
+        next(err);
       }
     });
 };
 
-const deleteCard = async (req, res) => {
-  try {
-    const card = await Card.findByIdAndDelete(
-      req.params.cardId,
-    )
-      .orFail(() => new Error('Not found'));
-    res.status(200).send(card);
-  } catch (err) {
-    if (err.message === 'Not found') {
-      res
-        .status(NOT_FOUND)
-        .send({
-          message: 'Card not found',
-        });
-    } else if (err.name === 'CastError') {
-      res
-        .status(ERROR_CODE)
-        .send({
-          message: 'Запрашиваемые данные не найдены',
-        });
-    } else {
-      res
-        .status(INTERNAL_SERVER_ERROR)
-        .send({
-          message: 'Server error',
-        });
-    }
-  }
+const deleteCard = async (req, res, next) => {
+  Card.findByIdAndDelete(
+    req.params.cardId,
+  )
+    .orFail(() => {
+      throw new NotFoundError('Карточка не найдена');
+    })
+    .then((card) => {
+      const owner = card.owner.toString();
+      const _id = req.user._id.toString();
+      if (owner === _id) {
+        Card.deleteOne(card)
+          .then(() => {
+            res.status(200).send({ message: 'Запрос выполнен' });
+          })
+          .catch(next);
+      } else {
+        throw new Forbidden('Доступ запрещён');
+      }
+    })
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        next(new BadRequest('Некорректный запрос'));
+      } else {
+        next(err);
+      }
+    });
 };
 
-const likeCard = (req, res) => {
+const likeCard = (req, res, next) => {
   Card.findByIdAndUpdate(
     req.params.cardId,
     { $addToSet: { likes: req.user._id } },
     { new: true },
   )
-    .orFail(() => new Error('Not found'))
+    .populate('owner')
+    .orFail(() => {
+      throw new NotFoundError('Карточка не найдена');
+    })
     .then((card) => {
       res.status(200).send(card);
     })
     .catch((err) => {
-      if (err.message === 'Not found') {
-        res.status(NOT_FOUND).send({
-          message: 'Card not found',
-        });
-      } else if (err.name === 'CastError') {
-        res.status(ERROR_CODE).send({
-          message: 'Запрашиваемые данные не найдены',
-        });
+      if (err.name === 'CastError') {
+        next(new BadRequest('Некорректный запрос'));
       } else {
-        res.status(INTERNAL_SERVER_ERROR).send({
-          message: 'Server error',
-        });
+        next(err);
       }
     });
 };
 
-const dislikeCard = (req, res) => {
+const dislikeCard = (req, res, next) => {
   Card.findByIdAndUpdate(
     req.params.cardId,
     { $pull: { likes: req.user._id } },
     { new: true },
   )
-    .orFail(() => new Error('Not found'))
+    .populate('owner')
+    .orFail(() => {
+      throw new NotFoundError('Карточка не найдена');
+    })
     .then((card) => {
       res.status(200).send(card);
     })
     .catch((err) => {
-      if (err.message === 'Not found') {
-        res
-          .status(NOT_FOUND)
-          .send({
-            message: 'Card not found',
-          });
-      } else if (err.name === 'CastError') {
-        res
-          .status(ERROR_CODE)
-          .send({
-            message: 'Запрашиваемые данные не найдены',
-          });
-      } else {
-        res
-          .status(INTERNAL_SERVER_ERROR)
-          .send({
-            message: 'Server error',
-          });
+      if (err.name === 'CastError' || err.name === 'BadRequest') {
+        next(new BadRequest('Некорректный запрос'));
+        return;
       }
+      next(err);
     });
 };
 

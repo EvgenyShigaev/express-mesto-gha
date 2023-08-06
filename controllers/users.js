@@ -1,91 +1,101 @@
+const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+
 const User = require('../models/user');
 
-const ERROR_CODE = 400;
-const NOT_FOUND = 404;
-const INTERNAL_SERVER_ERROR = 500;
+// error 400;
+const BadRequest = require('../errors/BadRequest');
+// error 404;
+const NotFoundError = require('../errors/NotFoundError');
+// error 409
+const Conflict = require('../errors/Conflict');
 
-const getUsers = async (req, res) => {
-  try {
-    const users = await User.find({});
-    res.status(200).send(users);
-  } catch (err) {
-    res
-      .status(INTERNAL_SERVER_ERROR)
-      .send({
-        message: 'Server error',
-      });
-  }
+const getUsers = (req, res, next) => {
+  User
+    .find({})
+    .orFail(() => {
+      throw new NotFoundError('Пользователь не найден');
+    })
+    .then((users) => res.status(200).send(users))
+    .catch((err) => {
+      next(err);
+    });
 };
 
-const getUser = (req, res) => {
+const getUser = (req, res, next) => {
   User.findById(req.params.userId)
-    .then((user) => {
-      if (!user) {
-        res.status(404).send({ message: 'User not found' });
-      } else {
-        res.status(200).send(user);
+    .orFail(() => {
+      throw new NotFoundError('Пользователь не найден');
+    })
+    .then((user) => res
+      .status(200)
+      .send({ user }))
+    .catch((err) => {
+      if (err instanceof mongoose.Error.CastError) {
+        return next(new BadRequest('Некорректный запрос'));
       }
+      return next(err);
+    });
+};
+
+const createUser = (req, res, next) => {
+  const {
+    name,
+    about,
+    avatar,
+    email,
+    password,
+  } = req.body;
+
+  bcrypt.hash(password, 10)
+    .then((hash) => User
+      .create(
+        {
+          name,
+          about,
+          avatar,
+          email,
+          password: hash,
+        },
+      ))
+    .then((user) => {
+      res.status(201)
+        .send({
+          _id: user._id,
+          name: user.name,
+          about: user.about,
+          avatar: user.avatar,
+          email: user.email,
+        });
     })
     .catch((err) => {
-      if (err.name === 'CastError') {
-        res.status(400).send({ message: 'Запрашиваемые данные не найдены' });
-      } else {
-        res.status(500).send({ message: 'Server error' });
+      if (err instanceof mongoose.Error.ValidationError) {
+        return next(new BadRequest('Некорректный запрос'));
       }
+      if (err.name === 'MongoServerError' && err.code === 11000) {
+        return next(new Conflict('Произошел конфликт запроса и данных на сервере'));
+      }
+      return next(err);
     });
 };
 
-const createUser = (req, res) => {
-  const { name, about, avatar } = req.body;
-  User.create({ name, about, avatar })
-    .then((user) => res.status(201).send(user))
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        res
-          .status(ERROR_CODE)
-          .send({
-            message: 'Запрашиваемые данные не найдены',
-          });
-      } else {
-        res
-          .status(INTERNAL_SERVER_ERROR)
-          .send({
-            message: 'Server error',
-          });
-      }
-    });
-};
-
-const updateAvatar = (req, res) => {
+const updateAvatar = (req, res, next) => {
   const { avatar } = req.body;
 
   User.findByIdAndUpdate(req.user._id, { avatar }, { new: true, runValidators: true })
     .orFail(new Error('Not Found'))
-    .then((user) => res.status(200).send({ data: user }))
+    .then((user) => res.status(200).send(user))
     .catch((err) => {
-      if (err.message === 'Not found') {
-        res
-          .status(NOT_FOUND)
-          .send({
-            message: 'User not found',
-          });
-      } else if (err.message === 'Запрашиваемые данные не найдены') {
-        res
-          .status(ERROR_CODE)
-          .send({
-            message: 'Запрашиваемые данные не найдены',
-          });
+      if (err instanceof mongoose.Error.ValidationError) {
+        next(new BadRequest('Некорректный запрос'));
       } else {
-        res
-          .status(INTERNAL_SERVER_ERROR)
-          .send({
-            message: 'Server error',
-          });
+        next(err);
       }
     });
 };
 
-const updateUser = (req, res) => {
+const updateUser = (req, res, next) => {
   const { name, about } = req.body;
   User.findByIdAndUpdate(
     req.user._id,
@@ -95,20 +105,41 @@ const updateUser = (req, res) => {
     .orFail(new Error('Not Found'))
     .then((user) => {
       res.status(200).send(user);
-    })
-    .catch((err) => {
-      if (err.message === 'Not found') {
-        res.status(404).send({
-          message: 'User not found',
-        });
-      } else if (err.name === 'ValidationError') {
-        res.status(400).send({
-          message: 'Запрашиваемые данные не найдены',
-        });
+    }).catch((err) => {
+      if (err instanceof mongoose.Error.ValidationError) {
+        next(new BadRequest('Некорректный запрос'));
       } else {
-        res.status(500).send({
-          message: 'Server error',
-        });
+        next(err);
+      }
+    });
+};
+
+const login = (req, res, next) => {
+  const { email, password } = req.body;
+
+  return User.findUserByCredentials(email, password)
+    .then((user) => {
+      const token = jwt.sign({ _id: user._id }, 'some-secret-key', { expiresIn: '7d' });
+      res.status(200).send({ token });
+    })
+    .catch(next);
+};
+
+const currentUser = (req, res, next) => {
+  User
+    .findById(req.user._id)
+    .orFail(() => {
+      throw new NotFoundError('Пользователь не найден');
+    })
+    .then((user) => res
+      .status(200)
+      .send({ data: user }))
+
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        next(new BadRequest('Некорректный запрос'));
+      } else {
+        next(err);
       }
     });
 };
@@ -119,4 +150,6 @@ module.exports = {
   createUser,
   updateUser,
   updateAvatar,
+  login,
+  currentUser,
 };

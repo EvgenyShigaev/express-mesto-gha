@@ -1,24 +1,21 @@
 const express = require('express');
 const mongoose = require('mongoose');
+const helmet = require('helmet');
+const limiter = require('./middlewares/rateLimit');
+
 const router = require('./routes');
 
 const { PORT = 3000 } = process.env;
 
 const app = express();
+app.use(helmet());
+app.use(limiter);
 
 mongoose.connect('mongodb://127.0.0.1:27017/mestodb', {
   useNewUrlParser: true,
 });
 
 app.use(express.json());
-
-app.use((req, res, next) => {
-  req.user = {
-    _id: '64bc2f5238884218d7141e8c',
-  };
-
-  next();
-});
 
 app.use(router);
 
