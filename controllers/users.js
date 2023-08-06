@@ -11,34 +11,15 @@ const NotFoundError = require('../errors/NotFoundError');
 // error 409
 const Conflict = require('../errors/Conflict');
 
-const getUsers = (req, res, next) => {
-  User
-    .find({})
-    .orFail(() => {
-      throw new NotFoundError('Пользователь не найден');
-    })
-    .then((users) => res.status(200).send({ data: users }))
-    .catch((err) => {
-      next(err);
-    });
-};
+const login = (req, res, next) => {
+  const { email, password } = req.body;
 
-// findById
-const getUser = (req, res, next) => {
-  User.findById(req.user_id)
-    .orFail(() => {
-      throw new NotFoundError('Пользователь не найден');
+  return User.findUserByCredentials(email, password)
+    .then((user) => {
+      const token = jwt.sign({ _id: user._id }, 'some-secret-key', { expiresIn: '7d' });
+      res.status(200).send({ token });
     })
-    .then((user) => res
-      .status(200)
-      .send(user))
-    .catch((err) => {
-      if (err.name === 'CastError') {
-        next(new BadRequest('Некорректный запрос'));
-      } else {
-        next(err);
-      }
-    });
+    .catch(next);
 };
 
 const createUser = (req, res, next) => {
@@ -82,6 +63,36 @@ const createUser = (req, res, next) => {
     });
 };
 
+const getUsers = (req, res, next) => {
+  User
+    .find({})
+    .orFail(() => {
+      throw new NotFoundError('Пользователь не найден');
+    })
+    .then((users) => res.status(200).send({ data: users }))
+    .catch((err) => {
+      next(err);
+    });
+};
+
+// findById
+const getUser = (req, res, next) => {
+  User.findById(req.user_id)
+    .orFail(() => {
+      throw new NotFoundError('Пользователь не найден');
+    })
+    .then((user) => res
+      .status(200)
+      .send(user))
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        next(new BadRequest('Некорректный запрос'));
+      } else {
+        next(err);
+      }
+    });
+};
+
 const updateAvatar = (req, res, next) => {
   const { avatar } = req.body;
 
@@ -114,17 +125,6 @@ const updateUser = (req, res, next) => {
         next(err);
       }
     });
-};
-
-const login = (req, res, next) => {
-  const { email, password } = req.body;
-
-  return User.findUserByCredentials(email, password)
-    .then((user) => {
-      const token = jwt.sign({ _id: user._id }, 'some-secret-key', { expiresIn: '7d' });
-      res.status(200).send({ token });
-    })
-    .catch(next);
 };
 
 const currentUser = (req, res, next) => {
