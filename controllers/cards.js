@@ -18,6 +18,7 @@ const getCards = (req, res, next) => {
 const createCard = (req, res, next) => {
   const { name, link } = req.body;
   const owner = req.user._id;
+
   Card.create({ name, link, owner })
     .then((card) => res.status(201).send(card))
     .catch((err) => {
@@ -30,7 +31,7 @@ const createCard = (req, res, next) => {
 };
 
 const deleteCard = async (req, res, next) => {
-  Card.findByIdAndDelete(
+  Card.findById(
     req.params.cardId,
   )
     .orFail(() => {
@@ -64,7 +65,7 @@ const likeCard = (req, res, next) => {
     { $addToSet: { likes: req.user._id } },
     { new: true },
   )
-    .populate('owner')
+    .populate('owner', 'likes')
     .orFail(() => {
       throw new NotFoundError('Карточка не найдена');
     })
@@ -86,7 +87,7 @@ const dislikeCard = (req, res, next) => {
     { $pull: { likes: req.user._id } },
     { new: true },
   )
-    .populate('owner')
+    .populate('owner', 'likes')
     .orFail(() => {
       throw new NotFoundError('Карточка не найдена');
     })
