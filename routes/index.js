@@ -11,7 +11,7 @@ const {
 router.use('/users', userRoutes);
 router.use('/cards', cardRoutes);
 
-router.use('/signin', login, validationLogin);
-router.use('/signup', createUser, validationCreateUser);
+router.use('/signin', validationLogin, login);
+router.use('/signup', validationCreateUser, createUser);
 
 module.exports = router;
