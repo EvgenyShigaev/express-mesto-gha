@@ -34,9 +34,10 @@ const getUser = (req, res, next) => {
       .send(user))
     .catch((err) => {
       if (err.name === 'CastError') {
-        return next(new BadRequest('Некорректный запрос'));
+        next(new BadRequest('Некорректный запрос'));
+      } else {
+        next(err);
       }
-      return next(err);
     });
 };
 
