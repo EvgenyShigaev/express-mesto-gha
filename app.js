@@ -1,6 +1,6 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const helmet = require('helmet');
+// const helmet = require('helmet');
 const { errors } = require('celebrate');
 const router = require('./routes');
 const internalServerError = require('./middlewares/internalServerError');
@@ -14,7 +14,7 @@ mongoose.connect('mongodb://127.0.0.1:27017/mestodb', {
 
 const app = express();
 
-app.use(helmet());
+// app.use(helmet());
 app.use(limiter);
 
 app.use(express.json());

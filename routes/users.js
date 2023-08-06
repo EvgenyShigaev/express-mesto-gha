@@ -9,8 +9,9 @@ const {
   validationGetUsers,
 } = require('../middlewares/validation');
 
-router.get('/me', currentUser);
 router.get('/', getUsers);
+
+router.get('/me', currentUser);
 
 router.get('/:userId', validationGetUsers, getUser);
 
