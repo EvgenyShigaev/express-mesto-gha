@@ -1,6 +1,6 @@
 const { celebrate, Joi } = require('celebrate');
 
-const URL_REGEX = require('../utils.js/constants');
+const { URL_REGEX } = require('../utils.js/constants');
 
 // логин
 const validationLogin = celebrate({
