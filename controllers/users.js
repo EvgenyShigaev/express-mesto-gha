@@ -4,13 +4,11 @@ const jwt = require('jsonwebtoken');
 
 const User = require('../models/user');
 
-// error 400;
 const BadRequest = require('../errors/BadRequest');
-// error 404;
 const NotFoundError = require('../errors/NotFoundError');
-// error 409
 const Conflict = require('../errors/Conflict');
 
+// Создание пользователя: createUser
 const createUser = (req, res, next) => {
   const {
     name,
@@ -52,17 +50,19 @@ const createUser = (req, res, next) => {
     });
 };
 
+// Аутентификация пользователя: login
 const login = (req, res, next) => {
   const { email, password } = req.body;
 
   return User.findUserByCredentials(email, password)
     .then((user) => {
       const token = jwt.sign({ _id: user._id }, 'some-secret-key', { expiresIn: '7d' });
-      return res.status(200).send({ token });
+      res.status(200).send({ token });
     })
     .catch(next);
 };
 
+//  Получение списка пользователей: getUsers
 const getUsers = (req, res, next) => {
   User
     .find({})
@@ -75,15 +75,15 @@ const getUsers = (req, res, next) => {
     });
 };
 
-// findById
-const getUser = (req, res, next) => {
-  User.findById(req.user_id)
+// Получение информации о текущем пользователе: currentUser
+const currentUser = (req, res, next) => {
+  User
+    .findById(req.user._id)
     .orFail(() => {
       throw new NotFoundError('Пользователь не найден');
     })
-    .then((user) => res
-      .status(200)
-      .send(user))
+    .then((user) => res.status(200).send({ data: user }))
+
     .catch((err) => {
       if (err.name === 'CastError') {
         next(new BadRequest('Некорректный запрос'));
@@ -92,7 +92,7 @@ const getUser = (req, res, next) => {
       }
     });
 };
-
+// Обновление аватара пользователя: updateAvatar
 const updateAvatar = (req, res, next) => {
   const { avatar } = req.body;
 
@@ -107,7 +107,7 @@ const updateAvatar = (req, res, next) => {
       }
     });
 };
-
+// Обновление данных пользователя: updateUser
 const updateUser = (req, res, next) => {
   const { name, about } = req.body;
   User.findByIdAndUpdate(
@@ -127,16 +127,15 @@ const updateUser = (req, res, next) => {
     });
 };
 
-const currentUser = (req, res, next) => {
-  User
-    .findById(req.user._id)
+// Получение информации о определенном пользователе по id: getUser
+const getUser = (req, res, next) => {
+  User.findById(req.user_id)
     .orFail(() => {
       throw new NotFoundError('Пользователь не найден');
     })
     .then((user) => res
       .status(200)
-      .send({ data: user }))
-
+      .send(user))
     .catch((err) => {
       if (err.name === 'CastError') {
         next(new BadRequest('Некорректный запрос'));

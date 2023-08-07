@@ -3,7 +3,7 @@ const Unauthorized = require('../errors/Unauthorized');
 
 module.exports = (req, res, next) => {
   const { authorization } = req.headers;
-
+  // eslint-disable-next-line no-console
   if (!authorization || !authorization.startsWith('Bearer ')) {
     throw new Unauthorized('Необходима авторизация');
   }
@@ -16,8 +16,7 @@ module.exports = (req, res, next) => {
   } catch (err) {
     throw new Unauthorized('Необходима авторизация');
   }
+  req.user = payload;
 
-  req.user = payload; // записываем пейлоуд в объект запроса
-
-  next(); // пропускаем запрос дальше
+  return next();
 };
