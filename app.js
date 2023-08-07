@@ -15,9 +15,9 @@ mongoose.connect('mongodb://127.0.0.1:27017/mestodb', {
 const app = express();
 
 app.use(express.json());
-router.use(auth);
-app.use(router);
 
+app.use(router);
+router.use(auth);
 app.use(errors());
 app.use(internalServerError);
 
