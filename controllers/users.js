@@ -11,17 +11,6 @@ const NotFoundError = require('../errors/NotFoundError');
 // error 409
 const Conflict = require('../errors/Conflict');
 
-const login = (req, res, next) => {
-  const { email, password } = req.body;
-
-  return User.findUserByCredentials(email, password)
-    .then((user) => {
-      const token = jwt.signin({ _id: user._id }, 'some-secret-key', { expiresIn: '7d' });
-      res.status(200).send({ token });
-    })
-    .catch(next);
-};
-
 const createUser = (req, res, next) => {
   const {
     name,
@@ -61,6 +50,17 @@ const createUser = (req, res, next) => {
       }
       return next(err);
     });
+};
+
+const login = (req, res, next) => {
+  const { email, password } = req.body;
+
+  return User.findUserByCredentials(email, password)
+    .then((user) => {
+      const token = jwt.sign({ _id: user._id }, 'some-secret-key', { expiresIn: '7d' });
+      return res.status(200).send({ token });
+    })
+    .catch(next);
 };
 
 const getUsers = (req, res, next) => {
