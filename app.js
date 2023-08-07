@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 const { errors } = require('celebrate');
 const router = require('./routes');
 
-const auth = require('./middlewares/auth');
+// const auth = require('./middlewares/auth');
 // const limiter = require('./middlewares/rateLimit');
 const internalServerError = require('./middlewares/internalServerError');
 
@@ -15,7 +15,7 @@ mongoose.connect('mongodb://127.0.0.1:27017/mestodb', {
 const app = express();
 
 app.use(express.json());
-router.use(auth);
+// router.use(auth);
 app.use(router);
 
 app.use(errors());
