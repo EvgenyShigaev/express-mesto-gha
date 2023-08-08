@@ -1,7 +1,10 @@
 const router = require('express').Router();
+
+const auth = require('../middlewares/auth');
 const userRoutes = require('./users');
 const cardRoutes = require('./cards');
 const { createUser, login } = require('../controllers/users');
+
 const NotFoundError = require('../errors/NotFoundError');
 
 const {
@@ -9,8 +12,10 @@ const {
   validationCreateUser,
 } = require('../middlewares/validation');
 
-router.post('/signin', validationLogin, login);
 router.post('/signup', validationCreateUser, createUser);
+
+router.post('/signin', validationLogin, login);
+router.use(auth);
 
 router.use('/users', userRoutes);
 router.use('/cards', cardRoutes);

@@ -6,7 +6,7 @@ const router = require('./routes');
 
 // const auth = require('./middlewares/auth');
 // const limiter = require('./middlewares/rateLimit');
-const internalServerError = require('./middlewares/error500');
+const error500 = require('./middlewares/error500');
 
 const { PORT = 3000 } = process.env;
 mongoose.connect('mongodb://127.0.0.1:27017/mestodb', {
@@ -19,7 +19,7 @@ app.use(express.json());
 app.use(router);
 
 app.use(errors());
-app.use(internalServerError);
+app.use(error500);
 
 // app.use(helmet());
 // app.use(limiter);
