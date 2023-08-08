@@ -77,14 +77,12 @@ const getUsers = (req, res, next) => {
 
 // Получение информации о текущем пользователе: currentUser
 const currentUser = (req, res, next) => {
-  const { userId } = req.params;
-
   User
-    .findById(userId)
+    .findById(req.user._id)
     .orFail(() => {
       throw new NotFoundError('Пользователь не найден');
     })
-    .then((user) => res.status(200).send({ user }))
+    .then((user) => res.status(200).send({ data: user }))
 
     .catch((err) => {
       if (err.name === 'CastError') {
