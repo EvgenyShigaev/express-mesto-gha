@@ -12,7 +12,7 @@ mongoose.connect('mongodb://127.0.0.1:27017/mestodb', {
   useNewUrlParser: true,
 });
 
-const errorNotFound = require('./routes/errorNotFound');
+// const errorNotFound = require('./routes/errorNotFound');
 const authRoutes = require('./routes/auth');
 
 const { PORT = 3000 } = process.env;
@@ -21,7 +21,7 @@ const app = express();
 app.use(authRoutes);
 // app.use(auth);
 app.use(router);
-app.use(errorNotFound);
+// app.use(errorNotFound);
 app.use(errors());
 app.use(express.json());
 app.use(internalServerError);
