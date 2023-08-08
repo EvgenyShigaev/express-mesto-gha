@@ -97,7 +97,7 @@ const updateAvatar = (req, res, next) => {
   const { avatar } = req.body;
 
   User.findByIdAndUpdate(req.user._id, { avatar }, { new: true, runValidators: true })
-    .orFail(new Error('Not Found'))
+    .orFail(new NotFoundError('Пользователь не найден'))
     .then((user) => res.status(200).send(user))
     .catch((err) => {
       if (err instanceof mongoose.Error.ValidationError) {
@@ -115,7 +115,7 @@ const updateUser = (req, res, next) => {
     { name, about },
     { new: true, runValidators: true },
   )
-    .orFail(new NotFoundError('Not Found'))
+    .orFail(new NotFoundError('Пользователь не найден'))
     .then((user) => {
       res.status(200).send(user);
     }).catch((err) => {
