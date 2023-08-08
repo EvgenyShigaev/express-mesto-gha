@@ -41,8 +41,6 @@ const userSchema = new mongoose.Schema({
   },
 });
 
-// models/user.js
-
 userSchema.statics.findUserByCredentials = function findUserByCredentials(email, password) {
   // попытаемся найти пользователя по почте
   return this.findOne({ email }).select('+password') // this — это модель User

@@ -129,13 +129,15 @@ const updateUser = (req, res, next) => {
 
 // Получение информации о определенном пользователе по id: getUser
 const getUser = (req, res, next) => {
-  User.findById(req.user_id)
+  const { userId } = req.params;
+
+  User.findById(userId)
     .orFail(() => {
       throw new NotFoundError('Пользователь не найден');
     })
     .then((user) => res
       .status(200)
-      .send(user))
+      .send({ user }))
     .catch((err) => {
       if (err.name === 'CastError') {
         next(new BadRequest('Некорректный запрос'));
