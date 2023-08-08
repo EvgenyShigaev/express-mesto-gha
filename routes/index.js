@@ -2,23 +2,23 @@ const router = require('express').Router();
 
 const userRoutes = require('./users');
 const cardRoutes = require('./cards');
-const { createUser, login } = require('../controllers/users');
+// const { createUser, login } = require('../controllers/users');
 
-const {
-  validationLogin,
-  validationCreateUser,
-} = require('../middlewares/validation');
+// const {
+//   validationLogin,
+//   validationCreateUser,
+// } = require('../middlewares/validation');
 
-const NotFoundError = require('../errors/NotFoundError');
+// const NotFoundError = require('../errors/NotFoundError');
 
-router.post('/signin', validationLogin, login);
-router.post('/signup', validationCreateUser, createUser);
+// router.post('/signin', validationLogin, login);
+// router.post('/signup', validationCreateUser, createUser);
 
 router.use('/users', userRoutes);
 router.use('/cards', cardRoutes);
 
-router.use((req, res, next) => {
-  next(new NotFoundError('NotFoundError'));
-});
+// router.use((req, res, next) => {
+//   next(new NotFoundError('NotFoundError'));
+// });
 
 module.exports = router;
