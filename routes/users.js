@@ -13,12 +13,12 @@ const {
 
 router.get('/', auth, getUsers);
 
-router.get('/me', auth, currentUser);
+router.get('/me', currentUser);
 
-router.get('/:userId', auth, validationGetUsers, getUser);
+router.get('/:userId', validationGetUsers, getUser);
 
-router.patch('/me', auth, validationUpdateUser, updateUser);
+router.patch('/me', validationUpdateUser, updateUser);
 
-router.patch('/me/avatar', auth, validationUpdateAvatar, updateAvatar);
+router.patch('/me/avatar', validationUpdateAvatar, updateAvatar);
 
 module.exports = router;
